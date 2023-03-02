@@ -61,7 +61,7 @@ disabled rule("TEST")
 
 	actions
 	{
-		Log To Inspector(Custom String("{0}", Number Of Players(Event Player.MACRO_DUMMY_SETTINGS[1]), Facing Direction Of(Event Player)));
+		Log To Inspector();
 	}
 }
 
@@ -126,9 +126,9 @@ rule("INIT HELP PLAYER")
 	actions
 	{
 		"ON GROUND"
-		Create HUD Text(Event Player, Update Every Frame(Custom String("ON GROUND? => {0}", Is On Ground(Event Player))), Null, Null, Top,
-			0, Update Every Frame(Is On Ground(Event Player) ? Color(Green) : Color(Red)), Color(White), Color(White), String and Color,
-			Default Visibility);
+		Create HUD Text(Event Player, Update Every Frame(Custom String("ON GROUND? => {0}", Update Every Frame(Is On Ground(
+			Event Player)))), Null, Null, Top, 0, Update Every Frame(Update Every Frame(Is On Ground(Event Player)) ? Color(Green) : Color(
+			Red)), Color(White), Color(White), String and Color, Default Visibility);
 		"CODE"
 		Create HUD Text(Event Player, Null, Null, Custom String("CODE: {0}", Global.CODE), Top, 1, Color(White), Color(White), Color(
 			White), None, Default Visibility);
@@ -152,7 +152,7 @@ rule("INIT HELP PLAYER")
 			Color(White), Color(White), None, Visible Never);
 		If(Event Player == Host Player && Current Game Mode == Game Mode(Control));
 			"CHANGE CONTROL MAP"
-			Create HUD Text(Host Player, Null, Null, Custom String("CHANGE MAP => {0} + {1}", Button(Ultimate), Button(Ability 2)), Right, 8,
+			Create HUD Text(Host Player, Null, Null, Custom String("CHANGE MAP => {0} + {1}", Button(Ability 2), Button(Ultimate)), Right, 8,
 				Color(White), Color(White), Color(White), None, Visible Never);
 		End;
 		"SPAWN DUMMY BOT"
@@ -166,7 +166,7 @@ rule("INIT HELP PLAYER")
 			White), Event Player.MACRO_RECORDING == True || Event Player.MACRO_PLAYING == True ? Color(Green) : Color(White), Color,
 			Visible Never);
 		"REPLAY MACRO"
-		Create HUD Text(Event Player, Null, Null, Custom String("REPLAY MACRO => {0} + {1}", Button(Ultimate), Button(Ability 1)), Right,
+		Create HUD Text(Event Player, Null, Null, Custom String("REPLAY MACRO => {0} + {1}", Button(Ability 1), Button(Ultimate)), Right,
 			12, Color(White), Color(White), Event Player.MACRO_PLAYING == True ? Color(Green) : Color(White), Color, Visible Never);
 		"PAHARO"
 		Create HUD Text(Event Player, Null, Custom String("                      Kephrii's Custom - Made by Paharo"), Null, Right, 13,
