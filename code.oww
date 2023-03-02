@@ -1,0 +1,1110 @@
+variables
+{
+	global:
+		26: CODE
+		27: MAP_CURRENT
+		28: MAP_ARRAY
+		29: INIT_PLAYERS
+
+	player:
+		26: CHANGE_HERO_ARRAY
+		27: USING_FLY
+		28: SPECTATE_ENABLED
+		29: SPECTATE_PLAYER
+		30: SAVE_POS_CROUCH_CHASE
+		31: SAVE_POS_ARRAY
+		32: SAVE_POS_RELOAD_CHASE
+		33: MACRO_PLAYER_ARRAY
+		34: MACRO_DUMMY_SETTINGS
+		35: MACRO_CHASE_VAR
+		36: MACRO_RECORDING
+		37: MACRO_DATA_FACING
+		38: MACRO_DATA_POSITION
+		39: MACRO_DATA_HOLDING_ULT
+		40: MACRO_DATA_HOLDING_AB1
+		41: MACRO_DATA_HOLDING_AB2
+		42: MACRO_DATA_HOLDING_PRIMARY
+		43: MACRO_DATA_HOLDING_SECONDARY
+		44: MACRO_DATA_HOLDING_JUMP
+		45: MACRO_DATA_HOLDING_CROUCH
+		46: MACRO_DATA_HOLDING_RELOAD
+		47: MACRO_DATA_HOLDING_MELEE
+		48: MACRO_PLAYING
+		49: MACRO_PLAYING_FRAME
+		50: SELECTOR_ENABLED
+		51: SELECTOR_OPTION
+		52: SELECTOR_FINISHED
+		55: MACRO_DATA_TEAM
+}
+
+subroutines
+{
+	8: STOP_MOMENTUM
+	9: STOP_VERTICAL
+	10: SELECTOR_TEAM_CREATE
+	11: SELECTOR_TEAM_REMOVE
+}
+
+disabled rule("TEST")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Reload)) == True;
+	}
+
+	actions
+	{
+		Log To Inspector(Custom String("{0}", Number Of Players(Event Player.MACRO_DUMMY_SETTINGS[1]), Facing Direction Of(Event Player)));
+	}
+}
+
+rule("INIT GLOBAL")
+{
+	event
+	{
+		Ongoing - Global;
+	}
+
+	actions
+	{
+		Global.CODE = Custom String("RHGDH");
+		Global.MAP_ARRAY = Array(Array(Vector(225.810, 17, 249.500), Vector(51.880, 12, -100.750), Vector(-328.510, 13, 162.960), Vector(
+			-0.390, -0.040, -0.920), Vector(0, 0, -1), Vector(0, 0, -1)), Array(Vector(340.770, -21, -44.240), Vector(28.120, 62,
+			-147.050), Vector(-200.200, 2, -8.390), Vector(0.920, -0.040, -0.390), Vector(0, 0, -1), Vector(-0.710, -0.020, -0.710)),
+			Array(Vector(0.120, 95, 134.050), Vector(1.080, 1, -18.130), Vector(-0.060, 271, 294.860), Vector(0, 0, 1), Vector(0, 0, -1),
+			Vector(0, 0, -1)), Array(Vector(-174.830, -88.060, 0.040), Vector(-36.630, 14, -0.070), Vector(87.920, 129, 0), Vector(-1, 0,
+			0), Vector(-1, 0, 0), Vector(-1, 0, 0)), Array(Vector(114.390, 6, -220.640), Vector(152.290, 3, 256.460), Vector(-180.290, 16,
+			0), Vector(0.710, 0, -0.710), Vector(-0.710, 0, -0.710), Vector(-1, 0, 0)), Array(Vector(284.150, -12, -205.060), Vector(
+			270.010, 43.690, 155.410), Vector(-92.760, -160.410, 59.640), Vector(-0.020, 0.010, -1), Vector(0, -0.300, 0.950), Vector(1,
+			0.090, 0.020)));
+		Global.MAP_CURRENT = 0;
+		Global.INIT_PLAYERS = Empty Array;
+	}
+}
+
+rule("INIT PLAYER")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	actions
+	{
+		Disable Game Mode HUD(Event Player);
+		Event Player.USING_FLY = False;
+		Event Player.SELECTOR_ENABLED = False;
+		Event Player.SELECTOR_OPTION = Team 1;
+		Event Player.SELECTOR_FINISHED = False;
+	}
+}
+
+rule("INIT HELP PLAYER")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == False;
+		Array Contains(Global.INIT_PLAYERS, Event Player) == False;
+	}
+
+	actions
+	{
+		"ON GROUND"
+		Create HUD Text(Event Player, Update Every Frame(Custom String("ON GROUND? => {0}", Is On Ground(Event Player))), Null, Null, Top,
+			0, Update Every Frame(Is On Ground(Event Player) ? Color(Green) : Color(Red)), Color(White), Color(White), String and Color,
+			Default Visibility);
+		"CODE"
+		Create HUD Text(Event Player, Null, Null, Custom String("CODE: {0}", Global.CODE), Top, 1, Color(White), Color(White), Color(
+			White), None, Default Visibility);
+		"CHANGE HERO"
+		Create HUD Text(Event Player, Null, Null, Custom String("CHANGE HERO => {0} + {1}", Button(Interact), Button(Melee)), Right, 2,
+			Color(White), Color(White), Color(White), None, Visible Never);
+		"FLY"
+		Create HUD Text(Event Player, Null, Null, Custom String("TOGGLE FLY => {0} + {1}", Button(Crouch), Button(Ultimate)), Right, 3,
+			Color(White), Color(White), Event Player.USING_FLY ? Color(Green) : Color(White), Color, Visible Never);
+		"TP RAYCAST"
+		Create HUD Text(Event Player, Null, Null, Custom String("TELEPORT => {0} + {1}", Button(Crouch), Button(Interact)), Right, 4,
+			Color(White), Color(White), Color(White), None, Visible Never);
+		"SPECTATE PLAYER"
+		Create HUD Text(Event Player, Null, Null, Custom String("SPECTATE PLAYER => HOLD {0}", Button(Reload)), Right, 5, Color(White),
+			Color(White), Event Player.SPECTATE_ENABLED ? Color(Green) : Color(White), Color, Visible Never);
+		"SAVE TP POSITION"
+		Create HUD Text(Event Player, Null, Null, Custom String("SAVE TP POSITION => DOUBLE {0}", Button(Crouch)), Right, 6, Color(White),
+			Color(White), Color(White), None, Visible Never);
+		"LOAD TP POSITION"
+		Create HUD Text(Event Player, Null, Null, Custom String("LOAD TP POSITION => DOUBLE {0}", Button(Reload)), Right, 7, Color(White),
+			Color(White), Color(White), None, Visible Never);
+		If(Event Player == Host Player && Current Game Mode == Game Mode(Control));
+			"CHANGE CONTROL MAP"
+			Create HUD Text(Host Player, Null, Null, Custom String("CHANGE MAP => {0} + {1}", Button(Ultimate), Button(Ability 2)), Right, 8,
+				Color(White), Color(White), Color(White), None, Visible Never);
+		End;
+		"SPAWN DUMMY BOT"
+		Create HUD Text(Event Player, Null, Null, Custom String("SPAWN BOT => HOLD {0}", Button(Interact)), Right, 9, Color(White), Color(
+			White), Color(White), None, Visible Never);
+		"REMOVE DUMMY BOTS"
+		Create HUD Text(Event Player, Null, Null, Custom String("REMOVE BOTS => {0} + {1}", Button(Reload), Button(Interact)), Right, 10,
+			Color(White), Color(White), Color(White), None, Visible Never);
+		"CREATE MACRO"
+		Create HUD Text(Event Player, Null, Null, Custom String("CREATE MACRO => HOLD {0}", Button(Melee)), Right, 11, Color(White), Color(
+			White), Event Player.MACRO_RECORDING == True || Event Player.MACRO_PLAYING == True ? Color(Green) : Color(White), Color,
+			Visible Never);
+		"REPLAY MACRO"
+		Create HUD Text(Event Player, Null, Null, Custom String("REPLAY MACRO => {0} + {1}", Button(Ultimate), Button(Ability 1)), Right,
+			12, Color(White), Color(White), Event Player.MACRO_PLAYING == True ? Color(Green) : Color(White), Color, Visible Never);
+		"PAHARO"
+		Create HUD Text(Event Player, Null, Custom String("                      Kephrii's Custom - Made by Paharo"), Null, Right, 13,
+			Null, Color(Yellow), Color(White), None, Visible Never);
+		Modify Global Variable(INIT_PLAYERS, Append To Array, Event Player);
+		If(Team Of(Event Player) == Team 2 && Workshop Setting Toggle(Custom String("0. GAME SETTINGS"), Custom String("AUTO CHANGE TEAM"),
+			True, 0));
+			Move Player to Team(Event Player, Team 1, -1);
+		End;
+	}
+}
+
+rule("PLAYER NO COOLDOWN")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is True For Any(Array(Button(Ability 1), Button(Ability 2)), Is Button Held(Event Player, Current Array Element)) == True;
+	}
+
+	actions
+	{
+		Set Ability Cooldown(Event Player, Button(Ability 1), 0);
+		Set Ability Cooldown(Event Player, Button(Ability 2), 0);
+	}
+}
+
+rule("PLAYER RESET ULTIMATE")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Ultimate Charge Percent(Event Player) != 100;
+	}
+
+	actions
+	{
+		Set Ultimate Charge(Event Player, 100);
+	}
+}
+
+rule("PLAYER CHANGE HERO")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Is Button Held(Event Player, Button(Interact)) && Is Button Held(Event Player, Button(Melee))) == True;
+	}
+
+	actions
+	{
+		Event Player.CHANGE_HERO_ARRAY = Array(Position Of(Event Player), Facing Direction Of(Event Player));
+		Set Player Allowed Heroes(Event Player, Filtered Array(All Heroes, Current Array Element != Hero Of(Event Player)));
+		Wait(0.100, Ignore Condition);
+		Set Player Allowed Heroes(Event Player, All Heroes);
+		Wait Until(Has Spawned(Event Player), 99999);
+		disabled Wait(0.150, Ignore Condition);
+		Teleport(Event Player, Event Player.CHANGE_HERO_ARRAY[0]);
+		Set Facing(Event Player, Event Player.CHANGE_HERO_ARRAY[1], To World);
+	}
+}
+
+rule("PLAYER FLY TOGGLE")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Is Button Held(Event Player, Button(Crouch)) && Is Button Held(Event Player, Button(Ultimate))) == True;
+	}
+
+	actions
+	{
+		Event Player.USING_FLY = !Event Player.USING_FLY;
+	}
+}
+
+rule("PLAYER FLY > ON")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.USING_FLY == True;
+	}
+
+	actions
+	{
+		Set Gravity(Event Player, Absolute Value(0.001));
+		Call Subroutine(STOP_MOMENTUM);
+	}
+}
+
+rule("PLAYER FLY > OFF")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.USING_FLY == False;
+	}
+
+	actions
+	{
+		Stop Throttle In Direction(Event Player);
+		Set Gravity(Event Player, 100);
+		disabled Enable Messages(Event Player);
+	}
+}
+
+rule("PLAYER FLY > SUB STOP_MOMENTUM")
+{
+	event
+	{
+		Subroutine;
+		STOP_MOMENTUM;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Down, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Up, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Backward, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Forward, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Right, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Left, 0.001, To World, Cancel Contrary Motion);
+	}
+}
+
+rule("PLAYER FLY > SUB STOP_VERTICAL")
+{
+	event
+	{
+		Subroutine;
+		STOP_VERTICAL;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Down, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Up, 0.001, To World, Cancel Contrary Motion);
+	}
+}
+
+rule("PLAYER FLY > HOLDING JUMP")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Event Player.USING_FLY && Is Button Held(Event Player, Button(Jump))) == True;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Up, 1, To World, Incorporate Contrary Motion);
+		Wait(0.100, Ignore Condition);
+		Loop If Condition Is True;
+		Call Subroutine(STOP_VERTICAL);
+	}
+}
+
+rule("PLAYER FLY > HOLDING CROUCH")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Event Player.USING_FLY && Is Button Held(Event Player, Button(Crouch))) == True;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Down, 1, To World, Incorporate Contrary Motion);
+		Wait(0.100, Ignore Condition);
+		Loop If Condition Is True;
+		Call Subroutine(STOP_VERTICAL);
+	}
+}
+
+rule("PLAYER FLY > NOT HOLDING KEYS")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Event Player.USING_FLY && X Component Of(Throttle Of(Event Player)) == 0 && Z Component Of(Throttle Of(Event Player)) == 0)
+			== True;
+	}
+
+	actions
+	{
+		Stop Accelerating(Event Player);
+		Call Subroutine(STOP_MOMENTUM);
+	}
+}
+
+rule("PLAYER FLY > HOLDING FORDWARD")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Workshop Setting Toggle(Custom String("2. FLY SETTINGS"), Custom String("ACCURATE MOVEMENT WHEN FLYING FORWARD"), False, 0)
+			&& Event Player.USING_FLY && Z Component Of(Throttle Of(Event Player)) == 1) == True;
+	}
+
+	actions
+	{
+		Stop Accelerating(Event Player);
+		Start Accelerating(Event Player, Update Every Frame(Direction Towards(Eye Position(Event Player), Facing Direction Of(Event Player)
+			* 1000)), 6, 6, To World, Direction Rate and Max Speed);
+	}
+}
+
+rule("PLAYER FLY > HOLDING BACKWARD")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Workshop Setting Toggle(Custom String("2. FLY SETTINGS"), Custom String("ACCURATE MOVEMENT WHEN FLYING BACKWARD"), False, 1)
+			&& Event Player.USING_FLY && Z Component Of(Throttle Of(Event Player)) == -1) == True;
+	}
+
+	actions
+	{
+		Stop Accelerating(Event Player);
+		Start Accelerating(Event Player, Update Every Frame(Direction Towards(Eye Position(Event Player), Facing Direction Of(Event Player)
+			* -1000)), 6, 6, To World, Direction Rate and Max Speed);
+	}
+}
+
+rule("PLAYER TP RAYCAST")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Is Button Held(Event Player, Button(Crouch)) && Is Button Held(Event Player, Button(Interact))) == True;
+	}
+
+	actions
+	{
+		Teleport(Event Player, Ray Cast Hit Position(Eye Position(Event Player), Eye Position(Event Player) + Facing Direction Of(
+			Event Player) * 100, All Players(All Teams), Event Player, True));
+	}
+}
+
+rule("PLAYER SPECTATE")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Reload)) == True;
+	}
+
+	actions
+	{
+		If(Event Player.SPECTATE_ENABLED);
+			Event Player.SPECTATE_ENABLED = !Event Player.SPECTATE_ENABLED;
+			Set Invisible(Event Player.SPECTATE_PLAYER, None);
+			Stop Camera(Event Player);
+			Abort;
+		End;
+		Wait(0.333, Abort When False);
+		Event Player.SPECTATE_ENABLED = !Event Player.SPECTATE_ENABLED;
+		Event Player.SPECTATE_PLAYER = Player Closest To Reticle(Event Player, All Teams);
+		Start Camera(Event Player, Update Every Frame(Eye Position(Event Player.SPECTATE_PLAYER)), Update Every Frame(
+			Ray Cast Hit Position(Eye Position(Event Player.SPECTATE_PLAYER), Eye Position(Event Player.SPECTATE_PLAYER)
+			+ Facing Direction Of(Event Player.SPECTATE_PLAYER) * 1000, Empty Array, All Players(All Teams), False)), 0);
+		Set Invisible(Event Player.SPECTATE_PLAYER, All);
+	}
+}
+
+rule("PLAYER TP POSITION > SAVE CHASE")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Crouch)) == True;
+	}
+
+	actions
+	{
+		If(Event Player.SAVE_POS_CROUCH_CHASE > 0 && Event Player.SAVE_POS_CROUCH_CHASE < 1);
+			Event Player.SAVE_POS_ARRAY = Array(Facing Direction Of(Event Player), Position Of(Event Player));
+		Else;
+			Chase Player Variable Over Time(Event Player, SAVE_POS_CROUCH_CHASE, 1, 0.250, Destination and Duration);
+		End;
+	}
+}
+
+rule("PLAYER TP POSITION > SAVE CHASE RESET")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.SAVE_POS_CROUCH_CHASE == 1;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, SAVE_POS_CROUCH_CHASE);
+		Event Player.SAVE_POS_CROUCH_CHASE = 0;
+	}
+}
+
+rule("PLAYER TP POSITION > LOAD POSITION")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Reload)) == True;
+	}
+
+	actions
+	{
+		If(Event Player.SAVE_POS_RELOAD_CHASE > 0 && Event Player.SAVE_POS_RELOAD_CHASE < 1);
+			If(Event Player.SAVE_POS_ARRAY != Null);
+				Set Facing(Event Player, Event Player.SAVE_POS_ARRAY[0], To World);
+				Teleport(Event Player, Event Player.SAVE_POS_ARRAY[1]);
+			End;
+		Else;
+			Chase Player Variable Over Time(Event Player, SAVE_POS_RELOAD_CHASE, 1, 0.250, Destination and Duration);
+		End;
+	}
+}
+
+rule("PLAYER TP POSITION > LOAD POSITION RESET")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.SAVE_POS_RELOAD_CHASE == 1;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, SAVE_POS_RELOAD_CHASE);
+		Event Player.SAVE_POS_RELOAD_CHASE = 0;
+	}
+}
+
+rule("MACRO > START RECORDING")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(!Is Dummy Bot(Event Player) && Is Button Held(Event Player, Button(Melee))
+			&& !Event Player.MACRO_RECORDING && !Event Player.MACRO_PLAYING) == True;
+	}
+
+	actions
+	{
+		Wait(1, Abort When False);
+		Call Subroutine(SELECTOR_TEAM_CREATE);
+		Wait Until(Event Player.SELECTOR_FINISHED, 99999);
+		Event Player.MACRO_DATA_TEAM = Event Player.SELECTOR_OPTION;
+		Event Player.SELECTOR_FINISHED = False;
+		Event Player.MACRO_DATA_FACING = Empty Array;
+		Event Player.MACRO_DATA_POSITION = Empty Array;
+		Event Player.MACRO_DATA_HOLDING_ULT = Empty Array;
+		Event Player.MACRO_DATA_HOLDING_AB1 = Empty Array;
+		Event Player.MACRO_DATA_HOLDING_AB2 = Empty Array;
+		Event Player.MACRO_DATA_HOLDING_PRIMARY = Empty Array;
+		Event Player.MACRO_DATA_HOLDING_SECONDARY = Empty Array;
+		Event Player.MACRO_DATA_HOLDING_JUMP = Empty Array;
+		Event Player.MACRO_DATA_HOLDING_CROUCH = Empty Array;
+		Event Player.MACRO_DATA_HOLDING_RELOAD = Empty Array;
+		Event Player.MACRO_DATA_HOLDING_MELEE = Empty Array;
+		Event Player.MACRO_PLAYER_ARRAY = Array(Position Of(Event Player), Facing Direction Of(Event Player), Hero Of(Event Player));
+		Set Player Allowed Heroes(Event Player, Remove From Array(All Heroes, Hero Of(Event Player)));
+		Wait(0.250, Ignore Condition);
+		Reset Player Hero Availability(Event Player);
+		Wait Until(Has Spawned(Event Player), 99999);
+		Teleport(Event Player, Event Player.MACRO_PLAYER_ARRAY[0]);
+		Set Facing(Event Player, Event Player.MACRO_PLAYER_ARRAY[1], To World);
+		Wait(0.175, Ignore Condition);
+		Set Status(Event Player, Null, Frozen, 1);
+		Wait(1, Ignore Condition);
+		Event Player.MACRO_DUMMY_SETTINGS = Array(Hero Of(Event Player), Team Of(Event Player));
+		Create Progress Bar HUD Text(Event Player, Round To Integer(Event Player.MACRO_CHASE_VAR / 10 * 100, To Nearest), Custom String(
+			""), Left, 0, Color(Red), Color(White), Values, Default Visibility);
+		Chase Player Variable Over Time(Event Player, MACRO_CHASE_VAR, 10, 10, None);
+		Event Player.MACRO_RECORDING = True;
+		While(Event Player.MACRO_RECORDING);
+			Modify Player Variable(Event Player, MACRO_DATA_FACING, Append To Array, Facing Direction Of(Event Player));
+			Modify Player Variable(Event Player, MACRO_DATA_POSITION, Append To Array, Position Of(Event Player));
+			Modify Player Variable(Event Player, MACRO_DATA_HOLDING_ULT, Append To Array, Is Button Held(Event Player, Button(Ultimate)));
+			Modify Player Variable(Event Player, MACRO_DATA_HOLDING_AB1, Append To Array, Is Button Held(Event Player, Button(Ability 1)));
+			Modify Player Variable(Event Player, MACRO_DATA_HOLDING_AB2, Append To Array, Is Button Held(Event Player, Button(Ability 2)));
+			Modify Player Variable(Event Player, MACRO_DATA_HOLDING_PRIMARY, Append To Array, Is Button Held(Event Player, Button(
+				Primary Fire)));
+			Modify Player Variable(Event Player, MACRO_DATA_HOLDING_SECONDARY, Append To Array, Is Button Held(Event Player, Button(
+				Secondary Fire)));
+			Modify Player Variable(Event Player, MACRO_DATA_HOLDING_JUMP, Append To Array, Is Button Held(Event Player, Button(Jump)));
+			Modify Player Variable(Event Player, MACRO_DATA_HOLDING_CROUCH, Append To Array, Is Button Held(Event Player, Button(Crouch)));
+			Modify Player Variable(Event Player, MACRO_DATA_HOLDING_RELOAD, Append To Array, Is Button Held(Event Player, Button(Reload)));
+			Modify Player Variable(Event Player, MACRO_DATA_HOLDING_MELEE, Append To Array, Is Button Held(Event Player, Button(Melee)));
+			Wait(0.016, Ignore Condition);
+		End;
+	}
+}
+
+rule("MACRO > FINISH RECORDING")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.MACRO_CHASE_VAR == 10;
+	}
+
+	actions
+	{
+		Event Player.MACRO_RECORDING = False;
+		Stop Chasing Player Variable(Event Player, MACRO_CHASE_VAR);
+		Event Player.MACRO_CHASE_VAR = 0;
+		Start Forcing Player To Be Hero(Event Player, Event Player.MACRO_PLAYER_ARRAY[2]);
+		Stop Forcing Player To Be Hero(Event Player);
+		Destroy Progress Bar HUD Text(Last Text ID);
+		Event Player.MACRO_PLAYING = True;
+	}
+}
+
+rule("MACRO > START PLAYING")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.MACRO_PLAYING == True;
+	}
+
+	actions
+	{
+		Create Dummy Bot(Event Player.MACRO_DUMMY_SETTINGS[0], Event Player.MACRO_DATA_TEAM, Number Of Players(
+			Event Player.MACRO_DATA_TEAM), Event Player.MACRO_PLAYER_ARRAY[0], Event Player.MACRO_PLAYER_ARRAY[1]);
+		Wait(2, Ignore Condition);
+		While(Event Player.MACRO_PLAYING_FRAME != Count Of(Event Player.MACRO_DATA_POSITION));
+			"POS"
+			If(
+				Event Player.MACRO_DATA_POSITION[Event Player.MACRO_PLAYING_FRAME] != Event Player.MACRO_DATA_POSITION[Event Player.MACRO_PLAYING_FRAME - 1] && Event Player.MACRO_PLAYING_FRAME != 0);
+				Start Throttle In Direction(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM),
+					Direction Towards(Position Of(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1,
+					Event Player.MACRO_DATA_TEAM)), Event Player.MACRO_DATA_POSITION[Event Player.MACRO_PLAYING_FRAME]), 1, To World,
+					Add to existing throttle, None);
+			Else;
+				Stop Throttle In Direction(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM));
+			End;
+			"FACING"
+			Set Facing(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM),
+				Event Player.MACRO_DATA_FACING[Event Player.MACRO_PLAYING_FRAME], To World);
+			"ULT"
+			If(Event Player.MACRO_DATA_HOLDING_ULT[Event Player.MACRO_PLAYING_FRAME] == True);
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Ultimate)) == False);
+					Start Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Ultimate));
+				End;
+			Else;
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Ultimate)) == True);
+					Stop Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Ultimate));
+				End;
+			End;
+			"AB1"
+			If(Event Player.MACRO_DATA_HOLDING_AB1[Event Player.MACRO_PLAYING_FRAME] == True);
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Ability 1)) == False);
+					Start Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Ability 1));
+				End;
+			Else;
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Ability 1)) == True);
+					Stop Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Ability 1));
+				End;
+			End;
+			"AB2"
+			If(Event Player.MACRO_DATA_HOLDING_AB2[Event Player.MACRO_PLAYING_FRAME] == True);
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Ability 2)) == False);
+					Start Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Ability 2));
+				End;
+			Else;
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Ability 2)) == True);
+					Stop Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Ability 2));
+				End;
+			End;
+			"PRIMARY"
+			If(Event Player.MACRO_DATA_HOLDING_PRIMARY[Event Player.MACRO_PLAYING_FRAME] == True);
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Primary Fire)) == False);
+					Start Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Primary Fire));
+				End;
+			Else;
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Primary Fire)) == True);
+					Stop Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Primary Fire));
+				End;
+			End;
+			"SECONDARY"
+			If(Event Player.MACRO_DATA_HOLDING_SECONDARY[Event Player.MACRO_PLAYING_FRAME] == True);
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Secondary Fire)) == False);
+					Start Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Secondary Fire));
+				End;
+			Else;
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Secondary Fire)) == True);
+					Stop Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Secondary Fire));
+				End;
+			End;
+			"JUMP"
+			If(Event Player.MACRO_DATA_HOLDING_JUMP[Event Player.MACRO_PLAYING_FRAME] == True);
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(Jump))
+					== False);
+					Start Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Jump));
+				End;
+			Else;
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(Jump))
+					== True);
+					Stop Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Jump));
+				End;
+			End;
+			"CROUCH"
+			If(Event Player.MACRO_DATA_HOLDING_CROUCH[Event Player.MACRO_PLAYING_FRAME] == True);
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Crouch)) == False);
+					Start Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Crouch));
+				End;
+			Else;
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Crouch)) == True);
+					Stop Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Crouch));
+				End;
+			End;
+			"RELOAD"
+			If(Event Player.MACRO_DATA_HOLDING_RELOAD[Event Player.MACRO_PLAYING_FRAME] == True);
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Reload)) == False);
+					Start Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Reload));
+				End;
+			Else;
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Reload)) == True);
+					Stop Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Reload));
+				End;
+			End;
+			"MELEE"
+			If(Event Player.MACRO_DATA_HOLDING_MELEE[Event Player.MACRO_PLAYING_FRAME] == True);
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Melee)) == False);
+					Start Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Melee));
+				End;
+			Else;
+				If(Is Button Held(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+					Melee)) == True);
+					Stop Holding Button(Players In Slot(Number Of Players(Event Player.MACRO_DATA_TEAM) - 1, Event Player.MACRO_DATA_TEAM), Button(
+						Melee));
+				End;
+			End;
+			Event Player.MACRO_PLAYING_FRAME += 1;
+			Wait(0.016, Ignore Condition);
+		End;
+		Destroy Dummy Bot(Event Player.MACRO_DATA_TEAM, Number Of Players(Event Player.MACRO_DATA_TEAM) - 1);
+		Event Player.MACRO_PLAYING_FRAME = 0;
+		Event Player.MACRO_PLAYING = False;
+	}
+}
+
+rule("MACRO > REPLAY")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(
+			Event Player.MACRO_DATA_POSITION != 0 && Event Player.MACRO_RECORDING != True && Event Player.MACRO_PLAYING != True && Is Button Held(
+			Event Player, Button(Ultimate)) && Is Button Held(Event Player, Button(Ability 1))) == True;
+	}
+
+	actions
+	{
+		Event Player.MACRO_PLAYING = True;
+	}
+}
+
+rule("CHANGE CONTROL MAP")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Event Player == Host Player && Current Game Mode == Game Mode(Control) && Is Button Held(Event Player, Button(Ultimate))
+			&& Is Button Held(Event Player, Button(Ability 2))) == True;
+	}
+
+	actions
+	{
+		Global.MAP_CURRENT += 1;
+		If(Global.MAP_CURRENT == 3);
+			Global.MAP_CURRENT = 0;
+		End;
+		If(Current Map == Map(Busan));
+			Teleport(All Players(All Teams), Global.MAP_ARRAY[0][Global.MAP_CURRENT]);
+			Set Facing(All Players(All Teams), Global.MAP_ARRAY[0][Global.MAP_CURRENT + 3], To World);
+		Else If(Current Map == Map(Ilios));
+			Teleport(All Players(All Teams), Global.MAP_ARRAY[1][Global.MAP_CURRENT]);
+			Set Facing(All Players(All Teams), Global.MAP_ARRAY[1][Global.MAP_CURRENT + 3], To World);
+		Else If(Current Map == Map(Lijiang Tower) || Current Map == Map(Lijiang Tower Lunar New Year));
+			Teleport(All Players(All Teams), Global.MAP_ARRAY[2][Global.MAP_CURRENT]);
+			Set Facing(All Players(All Teams), Global.MAP_ARRAY[2][Global.MAP_CURRENT + 3], To World);
+		Else If(Current Map == Map(Nepal));
+			Teleport(All Players(All Teams), Global.MAP_ARRAY[3][Global.MAP_CURRENT]);
+			Set Facing(All Players(All Teams), Global.MAP_ARRAY[3][Global.MAP_CURRENT + 3], To World);
+		Else If(Current Map == Map(Oasis));
+			Teleport(All Players(All Teams), Global.MAP_ARRAY[4][Global.MAP_CURRENT]);
+			Set Facing(All Players(All Teams), Global.MAP_ARRAY[4][Global.MAP_CURRENT + 3], To World);
+		Else If(Current Map == Map(Antarctic Peninsula));
+			Teleport(All Players(All Teams), Global.MAP_ARRAY[5][Global.MAP_CURRENT]);
+			Set Facing(All Players(All Teams), Global.MAP_ARRAY[5][Global.MAP_CURRENT + 3], To World);
+		End;
+	}
+}
+
+rule("AUTO RESURRECT")
+{
+	event
+	{
+		Player Died;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Dummy Bot(Event Player) == False;
+		Workshop Setting Toggle(Custom String("0. GAME SETTINGS"), Custom String("AUTO RESURRECT NEAREST WALKABLE POSITION"), True, 1)
+			== True;
+	}
+
+	actions
+	{
+		Teleport(Event Player, Nearest Walkable Position(Position Of(Event Player)));
+		Wait(0.500, Ignore Condition);
+		Resurrect(Event Player);
+	}
+}
+
+rule("DUMMIES > SPAWN")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Interact)) == True;
+	}
+
+	actions
+	{
+		Wait(1, Abort When False);
+		Call Subroutine(SELECTOR_TEAM_CREATE);
+		Wait Until(Event Player.SELECTOR_FINISHED, 99999);
+		Event Player.SELECTOR_FINISHED = False;
+		Create Dummy Bot(Hero(Ana), Event Player.SELECTOR_OPTION, -1, Position Of(Event Player), Event Player);
+	}
+}
+
+rule("DUMMIES > RESURRECT")
+{
+	event
+	{
+		Player Died;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Workshop Setting Toggle(Custom String("1. DUMMY BOTS SETTINGS"), Custom String("AUTO RESURRECT DUMMY BOTS"), True, 0)
+			&& Is Dummy Bot(Event Player)) == True;
+	}
+
+	actions
+	{
+		Resurrect(Event Player);
+	}
+}
+
+rule("DUMMIES > REMOVE")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		(Is Button Held(Event Player, Button(Reload)) && Is Button Held(Event Player, Button(Interact))) == True;
+	}
+
+	actions
+	{
+		Destroy All Dummy Bots;
+	}
+}
+
+rule("SELECTOR > SUB CREATE")
+{
+	event
+	{
+		Subroutine;
+		SELECTOR_TEAM_CREATE;
+	}
+
+	actions
+	{
+		Disable Messages(Event Player);
+		Disable Hero HUD(Event Player);
+		Disable Game Mode In-World UI(Event Player);
+		Start Camera(Event Player, Vector(0, 200, 0), Vector(0, 210, 0), 0);
+		Create In-World Text(Event Player, Custom String("SELECT A TEAM"), Vector(0, 210, 0), 3, Do Not Clip, None, Color(White),
+			Default Visibility);
+		Create In-World Text(Event Player, Custom String("BLUE"), Vector(3, 210, 1), 3, Do Not Clip, Color,
+			Event Player.SELECTOR_OPTION == Team 1 ? Color(Team 1) : Color(Gray), Default Visibility);
+		Create In-World Text(Event Player, Custom String("RED"), Vector(-3, 210, 1), 3, Do Not Clip, Color,
+			Event Player.SELECTOR_OPTION == Team 2 ? Color(Team 2) : Color(Gray), Default Visibility);
+		Create In-World Text(Event Player, Custom String("CLICK TO CHANGE, CROUCH TO SELECT"), Vector(0, 210, 2), 3, Do Not Clip, None,
+			Color(White), Default Visibility);
+		Event Player.SELECTOR_ENABLED = True;
+		Set Status(Event Player, Null, Frozen, 9999);
+	}
+}
+
+rule("SELECTOR > CHANGE OPTION")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.SELECTOR_ENABLED == True;
+		Is Button Held(Event Player, Button(Primary Fire)) == True;
+	}
+
+	actions
+	{
+		Event Player.SELECTOR_OPTION = Event Player.SELECTOR_OPTION == Team 1 ? Team 2 : Team 1;
+	}
+}
+
+rule("SELECTOR > SELECT OPTION")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.SELECTOR_ENABLED == True;
+		Is Button Held(Event Player, Button(Crouch)) == True;
+	}
+
+	actions
+	{
+		Call Subroutine(SELECTOR_TEAM_REMOVE);
+	}
+}
+
+rule("SELECTOR > SUB REMOVE")
+{
+	event
+	{
+		Subroutine;
+		SELECTOR_TEAM_REMOVE;
+	}
+
+	actions
+	{
+		Event Player.SELECTOR_ENABLED = False;
+		Clear Status(Event Player, Frozen);
+		Enable Messages(Event Player);
+		Enable Hero HUD(Event Player);
+		Enable Game Mode In-World UI(Event Player);
+		Stop Camera(Event Player);
+		Destroy All In-World Text;
+		Event Player.SELECTOR_FINISHED = True;
+	}
+}
