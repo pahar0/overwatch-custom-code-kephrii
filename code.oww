@@ -58,11 +58,6 @@ disabled rule("TEST")
 	{
 		Is Button Held(Event Player, Button(Reload)) == True;
 	}
-
-	actions
-	{
-		Log To Inspector();
-	}
 }
 
 rule("INIT GLOBAL")
