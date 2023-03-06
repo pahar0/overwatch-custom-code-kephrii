@@ -1,3 +1,117 @@
+settings
+{
+	main
+	{
+		Description: "CODE: RHGDH made by paharo"
+		Mode Name: "Kephrii's Custom"
+	}
+
+	lobby
+	{
+		Allow Players Who Are In Queue: Yes
+		Match Voice Chat: Enabled
+	}
+
+	modes
+	{
+		Assault
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Control
+		{
+			enabled maps
+			{
+				Antarctic Peninsula 0
+			}
+		}
+
+		Escort
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Hybrid
+		{
+			enabled maps
+			{
+			}
+		}
+
+		Push
+		{
+			enabled maps
+			{
+			}
+		}
+
+		General
+		{
+			Health Pack Respawn Time Scalar: 10%
+			Hero Limit: Off
+			Respawn Time Scalar: 0%
+			Spawn Health Packs: Enabled
+		}
+	}
+
+	heroes
+	{
+		General
+		{
+			Ability Cooldown Time: 0%
+			Spawn With Ultimate Ready: On
+			Ultimate Generation: 500%
+			Ultimate Generation - Combat: 500%
+			Ultimate Generation - Passive: 500%
+
+			Ana
+			{
+				Biotic Grenade Cooldown Time: 0%
+				Sleep Dart Cooldown Time: 0%
+				Spawn With Ultimate Ready: On
+				Ultimate Generation - Combat Nano Boost: 500%
+				Ultimate Generation - Passive Nano Boost: 500%
+				Ultimate Generation Nano Boost: 500%
+			}
+
+			Ashe
+			{
+				Coach Gun Cooldown Time: 0%
+				Dynamite Cooldown Time: 0%
+				Spawn With Ultimate Ready: On
+				Ultimate Generation - Combat B.O.B.: 500%
+				Ultimate Generation - Passive B.O.B.: 500%
+				Ultimate Generation B.O.B.: 500%
+			}
+
+			Baptiste
+			{
+				Immortality Field Cooldown Time: 0%
+				Regenerative Burst Cooldown Time: 0%
+				Spawn With Ultimate Ready: On
+				Ultimate Generation - Combat Amplification Matrix: 500%
+				Ultimate Generation - Passive Amplification Matrix: 500%
+				Ultimate Generation Amplification Matrix: 500%
+			}
+
+			Torbjörn
+			{
+				Deploy Turret Cooldown Time: 0%
+			}
+		}
+	}
+
+	extensions
+	{
+		Spawn More Dummy Bots
+	}
+}
+
 variables
 {
 	global:
@@ -34,6 +148,8 @@ variables
 		50: SELECTOR_ENABLED
 		51: SELECTOR_OPTION
 		52: SELECTOR_FINISHED
+		53: TURRET_SPOT_CHASE
+		54: TURRET_SPOT_DUMMY_SLOT
 		55: MACRO_DATA_TEAM
 }
 
@@ -43,6 +159,8 @@ subroutines
 	9: STOP_VERTICAL
 	10: SELECTOR_TEAM_CREATE
 	11: SELECTOR_TEAM_REMOVE
+	13: DEPLOY_TURRET_CREATE
+	14: DEPLOY_TURRET_REMOVE
 }
 
 disabled rule("TEST")
@@ -54,9 +172,10 @@ disabled rule("TEST")
 		All;
 	}
 
-	conditions
+	actions
 	{
-		Is Button Held(Event Player, Button(Reload)) == True;
+		Create HUD Text(All Players(All Teams), Custom String("{0} {1}", Event Player.SELECTOR_ENABLED, Event Player.SELECTOR_OPTION),
+			Null, Null, Left, 0, Color(White), Color(White), Color(White), Visible To and String, Default Visibility);
 	}
 }
 
@@ -93,6 +212,11 @@ rule("INIT PLAYER")
 		All;
 	}
 
+	conditions
+	{
+		Is Dummy Bot(Event Player) == False;
+	}
+
 	actions
 	{
 		Disable Game Mode HUD(Event Player);
@@ -100,6 +224,8 @@ rule("INIT PLAYER")
 		Event Player.SELECTOR_ENABLED = False;
 		Event Player.SELECTOR_OPTION = Team 1;
 		Event Player.SELECTOR_FINISHED = False;
+		Event Player.TURRET_SPOT_DUMMY_SLOT = Null;
+		Event Player.MACRO_RECORDING = False;
 	}
 }
 
@@ -163,10 +289,14 @@ rule("INIT HELP PLAYER")
 		"REPLAY MACRO"
 		Create HUD Text(Event Player, Null, Null, Custom String("REPLAY MACRO => {0} + {1}", Button(Ability 1), Button(Ultimate)), Right,
 			12, Color(White), Color(White), Event Player.MACRO_PLAYING == True ? Color(Green) : Color(White), Color, Visible Never);
+		"DEPLOY TURRET"
+		Create HUD Text(Event Player, Null, Null, Custom String("DEPLOY TURRET => DOUBLE {0}", Button(Melee)), Right, 13, Color(White),
+			Color(White), Event Player.TURRET_SPOT_DUMMY_SLOT != Null ? Color(Green) : Color(White), Color, Visible Never);
 		"PAHARO"
-		Create HUD Text(Event Player, Null, Custom String("                      Kephrii's Custom - Made by Paharo"), Null, Right, 13,
+		Create HUD Text(Event Player, Null, Custom String("                      Kephrii's Custom - Made by Paharo"), Null, Right, 14,
 			Null, Color(Yellow), Color(White), None, Visible Never);
 		Modify Global Variable(INIT_PLAYERS, Append To Array, Event Player);
+		"AUTO CHANGE TEAM"
 		If(Team Of(Event Player) == Team 2 && Workshop Setting Toggle(Custom String("0. GAME SETTINGS"), Custom String("AUTO CHANGE TEAM"),
 			True, 0));
 			Move Player to Team(Event Player, Team 1, -1);
@@ -186,6 +316,7 @@ rule("PLAYER NO COOLDOWN")
 	conditions
 	{
 		Is True For Any(Array(Button(Ability 1), Button(Ability 2)), Is Button Held(Event Player, Current Array Element)) == True;
+		disabled (Is Button Held(Event Player, Button(Ability 1)) == True || Is Button Held(Event Player, Button(Ability 2)) == True) == True;
 	}
 
 	actions
@@ -227,6 +358,7 @@ rule("PLAYER CHANGE HERO")
 	conditions
 	{
 		(Is Button Held(Event Player, Button(Interact)) && Is Button Held(Event Player, Button(Melee))) == True;
+		Is Dummy Bot(Event Player) == False;
 	}
 
 	actions
@@ -239,6 +371,11 @@ rule("PLAYER CHANGE HERO")
 		disabled Wait(0.150, Ignore Condition);
 		Teleport(Event Player, Event Player.CHANGE_HERO_ARRAY[0]);
 		Set Facing(Event Player, Event Player.CHANGE_HERO_ARRAY[1], To World);
+		If(Event Player.TURRET_SPOT_DUMMY_SLOT != Null);
+			Call Subroutine(DEPLOY_TURRET_REMOVE);
+			Wait(0.150, Ignore Condition);
+			Call Subroutine(DEPLOY_TURRET_CREATE);
+		End;
 	}
 }
 
@@ -617,6 +754,9 @@ rule("MACRO > START RECORDING")
 	actions
 	{
 		Wait(1, Abort When False);
+		If(Event Player.TURRET_SPOT_DUMMY_SLOT != Null);
+			Call Subroutine(DEPLOY_TURRET_REMOVE);
+		End;
 		Call Subroutine(SELECTOR_TEAM_CREATE);
 		Wait Until(Event Player.SELECTOR_FINISHED, 99999);
 		Event Player.MACRO_DATA_TEAM = Event Player.SELECTOR_OPTION;
@@ -909,7 +1049,7 @@ rule("CHANGE CONTROL MAP")
 		Else If(Current Map == Map(Ilios));
 			Teleport(All Players(All Teams), Global.MAP_ARRAY[1][Global.MAP_CURRENT]);
 			Set Facing(All Players(All Teams), Global.MAP_ARRAY[1][Global.MAP_CURRENT + 3], To World);
-		Else If(Current Map == Map(Lijiang Tower) || Current Map == Map(Lijiang Tower Lunar New Year));
+		Else If(Current Map == Map(Lijiang Tower) || Current Map == Map(Lijiang Tower));
 			Teleport(All Players(All Teams), Global.MAP_ARRAY[2][Global.MAP_CURRENT]);
 			Set Facing(All Players(All Teams), Global.MAP_ARRAY[2][Global.MAP_CURRENT + 3], To World);
 		Else If(Current Map == Map(Nepal));
@@ -937,15 +1077,16 @@ rule("AUTO RESURRECT")
 	conditions
 	{
 		Is Dummy Bot(Event Player) == False;
-		Workshop Setting Toggle(Custom String("0. GAME SETTINGS"), Custom String("AUTO RESURRECT NEAREST WALKABLE POSITION"), True, 1)
-			== True;
 	}
 
 	actions
 	{
-		Teleport(Event Player, Nearest Walkable Position(Position Of(Event Player)));
-		Wait(0.500, Ignore Condition);
-		Resurrect(Event Player);
+		If(Workshop Setting Toggle(Custom String("0. GAME SETTINGS"), Custom String("AUTO RESURRECT NEAREST WALKABLE POSITION"), True, 1)
+			== True);
+			Teleport(Event Player, Nearest Walkable Position(Position Of(Event Player)));
+			Wait(0.250, Ignore Condition);
+			Resurrect(Event Player);
+		End;
 	}
 }
 
@@ -986,6 +1127,7 @@ rule("DUMMIES > RESURRECT")
 	{
 		(Workshop Setting Toggle(Custom String("1. DUMMY BOTS SETTINGS"), Custom String("AUTO RESURRECT DUMMY BOTS"), True, 0)
 			&& Is Dummy Bot(Event Player)) == True;
+		Event Player.TURRET_SPOT_DUMMY_SLOT == Null;
 	}
 
 	actions
@@ -1010,6 +1152,7 @@ rule("DUMMIES > REMOVE")
 
 	actions
 	{
+		Call Subroutine(DEPLOY_TURRET_REMOVE);
 		Destroy All Dummy Bots;
 	}
 }
@@ -1030,12 +1173,12 @@ rule("SELECTOR > SUB CREATE")
 		Start Camera(Event Player, Vector(0, 200, 0), Vector(0, 210, 0), 0);
 		Create In-World Text(Event Player, Custom String("SELECT A TEAM"), Vector(0, 210, 0), 3, Do Not Clip, None, Color(White),
 			Default Visibility);
-		Create In-World Text(Event Player, Custom String("BLUE"), Vector(3, 210, 1), 3, Do Not Clip, Color,
-			Event Player.SELECTOR_OPTION == Team 1 ? Color(Team 1) : Color(Gray), Default Visibility);
-		Create In-World Text(Event Player, Custom String("RED"), Vector(-3, 210, 1), 3, Do Not Clip, Color,
-			Event Player.SELECTOR_OPTION == Team 2 ? Color(Team 2) : Color(Gray), Default Visibility);
-		Create In-World Text(Event Player, Custom String("CLICK TO CHANGE, CROUCH TO SELECT"), Vector(0, 210, 2), 3, Do Not Clip, None,
-			Color(White), Default Visibility);
+		Create In-World Text(Event Player, Custom String("TEAMMATE"), Vector(3, 210, 1), 3, Do Not Clip, Color,
+			Event Player.SELECTOR_OPTION == Team Of(Event Player) ? Color(Green) : Color(Gray), Default Visibility);
+		Create In-World Text(Event Player, Custom String("ENEMY"), Vector(-3, 210, 1), 3, Do Not Clip, Color,
+			Event Player.SELECTOR_OPTION == Opposite Team Of(Team Of(Event Player)) ? Color(Green) : Color(Gray), Default Visibility);
+		Create In-World Text(Event Player, Custom String("{0} TO CHANGE, {1} TO SELECT", Button(Primary Fire), Button(Crouch)), Vector(0,
+			210, 2), 3, Do Not Clip, None, Color(White), Default Visibility);
 		Event Player.SELECTOR_ENABLED = True;
 		Set Status(Event Player, Null, Frozen, 9999);
 	}
@@ -1101,5 +1244,95 @@ rule("SELECTOR > SUB REMOVE")
 		Stop Camera(Event Player);
 		Destroy All In-World Text;
 		Event Player.SELECTOR_FINISHED = True;
+	}
+}
+
+rule("DEPLOY TURRET")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Is Button Held(Event Player, Button(Melee)) == True;
+		Is Dummy Bot(Event Player) == False;
+		Event Player.MACRO_RECORDING == False;
+	}
+
+	actions
+	{
+		If(Event Player.TURRET_SPOT_CHASE > 0 && Event Player.TURRET_SPOT_CHASE < 1);
+			If(Event Player.TURRET_SPOT_DUMMY_SLOT == Null);
+				Call Subroutine(DEPLOY_TURRET_CREATE);
+			End;
+			Press Button(Players In Slot(Event Player.TURRET_SPOT_DUMMY_SLOT, Team Of(Event Player)), Button(Ability 1));
+		Else;
+			Chase Player Variable Over Time(Event Player, TURRET_SPOT_CHASE, 1, 0.250, Destination and Duration);
+		End;
+	}
+}
+
+rule("DEPLOY TURRET > RESET CHASE")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		All;
+	}
+
+	conditions
+	{
+		Event Player.TURRET_SPOT_CHASE == 1;
+	}
+
+	actions
+	{
+		Stop Chasing Player Variable(Event Player, TURRET_SPOT_CHASE);
+		Event Player.TURRET_SPOT_CHASE = 0;
+	}
+}
+
+rule("DEPLOY TURRET > SUB CREATE")
+{
+	event
+	{
+		Subroutine;
+		DEPLOY_TURRET_CREATE;
+	}
+
+	actions
+	{
+		Create Dummy Bot(Hero(Torbjörn), Team Of(Event Player), -1, Position Of(Event Player) + Vector(0, 2.500, 0), Down);
+		Wait(0.250, Ignore Condition);
+		Event Player.TURRET_SPOT_DUMMY_SLOT = Number Of Players(Team Of(Event Player)) - 1;
+		Players In Slot(Event Player.TURRET_SPOT_DUMMY_SLOT, Team Of(Event Player)).TURRET_SPOT_DUMMY_SLOT = Event Player;
+		Set Gravity(Players In Slot(Event Player.TURRET_SPOT_DUMMY_SLOT, Team Of(Event Player)), 0.001);
+		Attach Players(Players In Slot(Event Player.TURRET_SPOT_DUMMY_SLOT, Team Of(Event Player)), Event Player, Vector(0, 3, -1.500));
+		Start Facing(Players In Slot(Event Player.TURRET_SPOT_DUMMY_SLOT, Team Of(Event Player)), Direction Towards(Players In Slot(
+			Event Player.TURRET_SPOT_DUMMY_SLOT, Team Of(Event Player)), Closest Player To(Players In Slot(
+			Event Player.TURRET_SPOT_DUMMY_SLOT, Team Of(Event Player)), Team Of(Event Player)) + Vector(0, 1.800, 0)), 10000, To World,
+			Direction and Turn Rate);
+		Disable Movement Collision With Environment(Players In Slot(Event Player.TURRET_SPOT_DUMMY_SLOT, Team Of(Event Player)), True);
+		Disable Movement Collision With Players(Players In Slot(Event Player.TURRET_SPOT_DUMMY_SLOT, Team Of(Event Player)));
+	}
+}
+
+rule("DEPLOY TURRET > SUB REMOVE")
+{
+	event
+	{
+		Subroutine;
+		DEPLOY_TURRET_REMOVE;
+	}
+
+	actions
+	{
+		Destroy Dummy Bot(Team Of(Event Player), Event Player.TURRET_SPOT_DUMMY_SLOT);
+		Event Player.TURRET_SPOT_DUMMY_SLOT = Null;
 	}
 }
